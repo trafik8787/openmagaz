@@ -115,8 +115,6 @@ spl_autoload_extensions('.php');
 // Engine
 require_once(modification(DIR_SYSTEM . 'engine/action.php'));
 require_once(modification(DIR_SYSTEM . 'engine/controller.php'));
-require_once(modification(DIR_SYSTEM . 'engine/controllerAdminCore.php'));
-require_once(modification(DIR_SYSTEM . 'engine/interfaceCore.php'));
 require_once(modification(DIR_SYSTEM . 'engine/event.php'));
 require_once(modification(DIR_SYSTEM . 'engine/front.php'));
 require_once(modification(DIR_SYSTEM . 'engine/loader.php'));

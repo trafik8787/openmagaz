@@ -12,7 +12,6 @@ class Event {
 			'action' => $action,
 			'priority' => (int)$priority,
 		);
-
 	}
 
 	public function unregister($key, $action) {
@@ -27,16 +26,12 @@ class Event {
 
 	public function trigger($key, &$arg = array()) {
 		if (isset($this->data[$key])) {
-			$ret = array();
 			usort($this->data[$key], array("Event", "cmpByPriority"));
 			foreach ($this->data[$key] as $event) {
 				$action = $this->createAction($event['action'], $arg);
-				$ret[$key] = $action->execute($this->registry);
+				$action->execute($this->registry);
 			}
-
-			return $ret[$key];
 		}
-
 	}
 
 	protected static function cmpByPriority($a, $b) {
