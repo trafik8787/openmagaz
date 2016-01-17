@@ -38,6 +38,19 @@
               <?php } ?>
             </div>
           </div>
+
+          <div class="form-group">
+            <label class="col-sm-2 control-label" for="input-sort-dop-filtr">Дополнительный фильтр</label>
+            <div class="col-sm-10">
+              <select class="form-control" name="dop_filtr" id="input-sort-dop-filtr">
+                <option value="">Выбрать</option>
+                <option <?if (!empty($filter_group_description[$language['language_id']]['dop_filtr']) and $filter_group_description[$language['language_id']]['dop_filtr'] == 'price_filtr') {?> selected <?}?> value="price_filtr">Цена</option>
+
+              </select>
+
+            </div>
+          </div>
+
           <div class="form-group">
             <label class="col-sm-2 control-label" for="input-sort-order"><?php echo $entry_sort_order; ?></label>
             <div class="col-sm-10">

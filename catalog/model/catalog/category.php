@@ -24,7 +24,8 @@ class ModelCatalogCategory extends Model {
 		$filter_group_data = array();
 
 		if ($implode) {
-			$filter_group_query = $this->db->query("SELECT DISTINCT f.filter_group_id, fgd.name, fg.sort_order FROM " . DB_PREFIX . "filter f LEFT JOIN " . DB_PREFIX . "filter_group fg ON (f.filter_group_id = fg.filter_group_id) LEFT JOIN " . DB_PREFIX . "filter_group_description fgd ON (fg.filter_group_id = fgd.filter_group_id) WHERE f.filter_id IN (" . implode(',', $implode) . ") AND fgd.language_id = '" . (int)$this->config->get('config_language_id') . "' GROUP BY f.filter_group_id ORDER BY fg.sort_order, LCASE(fgd.name)");
+			//добавлено AND fgd.dop_filter = ''
+			$filter_group_query = $this->db->query("SELECT DISTINCT f.filter_group_id, fgd.name, fg.sort_order FROM " . DB_PREFIX . "filter f LEFT JOIN " . DB_PREFIX . "filter_group fg ON (f.filter_group_id = fg.filter_group_id) LEFT JOIN " . DB_PREFIX . "filter_group_description fgd ON (fg.filter_group_id = fgd.filter_group_id) WHERE f.filter_id IN (" . implode(',', $implode) . ") AND fgd.dop_filter = '' AND fgd.language_id = '" . (int)$this->config->get('config_language_id') . "' GROUP BY f.filter_group_id ORDER BY fg.sort_order, LCASE(fgd.name)");
 
 			foreach ($filter_group_query->rows as $filter_group) {
 				$filter_data = array();
@@ -48,6 +49,11 @@ class ModelCatalogCategory extends Model {
 			}
 		}
 
+		//дополнительные фильтры
+		$dop_filtr = $this->getFilterDop($category_id);
+		//сливаем масивы дополнительный фильтров с стандартными
+		$filter_group_data = array_merge($filter_group_data, $dop_filtr);
+
 		return $filter_group_data;
 	}
 
@@ -66,4 +72,67 @@ class ModelCatalogCategory extends Model {
 
 		return $query->row['total'];
 	}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	/**
+	 * @param $category_id
+	 * @return array
+	 * todo получаем дополнительные фильтры
+	 */
+	public function getFilterDop ($category_id) {
+
+		$query = $this->db->query("SELECT * FROM " . DB_PREFIX . "category_filter catf  INNER JOIN ". DB_PREFIX ."filter f ON (catf.filter_id = f.filter_id) INNER JOIN ". DB_PREFIX . "filter_group_description fgd ON (f.filter_group_id = fgd.filter_group_id) WHERE fgd.dop_filter <> '' AND catf.category_id = '" . (int)$category_id . "' AND fgd.language_id = '" .(int)$this->config->get('config_language_id'). "'");
+
+		if (!empty($query)) {
+			$result = array();
+
+			foreach ($query->rows as $item) {
+
+				switch ($item['dop_filter']) {
+					case 'price_filtr':
+						$price = $this->getPriceProduct($category_id);
+				}
+
+				if ($price) {
+					$result[] = array('filter_group_id' => $item['filter_group_id'],
+							'name' => $item['name'],
+							'dop_filter' => $price);
+				}
+
+			}
+
+
+		}
+		return $result;
+	}
+
+
+	/**
+	 * @return array
+	 * todo получаем наибольшую и наименьшую цену
+	 */
+	public function getPriceProduct ($category_id) {
+		$max = $this->db->query("SELECT MAX(price) maxprice FROM " . DB_PREFIX . "product pr INNER JOIN ". DB_PREFIX ."product_to_category ptc ON(pr.product_id = ptc.product_id) WHERE ptc.category_id = ".$category_id);
+		$min = $this->db->query("SELECT MIN(price) minprice FROM " . DB_PREFIX . "product pr INNER JOIN ". DB_PREFIX ."product_to_category ptc ON(pr.product_id = ptc.product_id) WHERE ptc.category_id = ".$category_id);
+		return array('min' => $min->row['minprice'], 'max' => $max->row['maxprice']);
+	}
+
 }

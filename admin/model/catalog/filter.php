@@ -8,7 +8,7 @@ class ModelCatalogFilter extends Model {
 		$filter_group_id = $this->db->getLastId();
 
 		foreach ($data['filter_group_description'] as $language_id => $value) {
-			$this->db->query("INSERT INTO " . DB_PREFIX . "filter_group_description SET filter_group_id = '" . (int)$filter_group_id . "', language_id = '" . (int)$language_id . "', name = '" . $this->db->escape($value['name']) . "'");
+			$this->db->query("INSERT INTO " . DB_PREFIX . "filter_group_description SET filter_group_id = '" . (int)$filter_group_id . "', language_id = '" . (int)$language_id . "', name = '" . $this->db->escape($value['name']) . "', dop_filter = '". $data['dop_filtr']. "'");
 		}
 
 		if (isset($data['filter'])) {
@@ -36,7 +36,7 @@ class ModelCatalogFilter extends Model {
 		$this->db->query("DELETE FROM " . DB_PREFIX . "filter_group_description WHERE filter_group_id = '" . (int)$filter_group_id . "'");
 
 		foreach ($data['filter_group_description'] as $language_id => $value) {
-			$this->db->query("INSERT INTO " . DB_PREFIX . "filter_group_description SET filter_group_id = '" . (int)$filter_group_id . "', language_id = '" . (int)$language_id . "', name = '" . $this->db->escape($value['name']) . "'");
+			$this->db->query("INSERT INTO " . DB_PREFIX . "filter_group_description SET filter_group_id = '" . (int)$filter_group_id . "', language_id = '" . (int)$language_id . "', name = '" . $this->db->escape($value['name']) . "', dop_filter = '". $data['dop_filtr']. "'");
 		}
 
 		$this->db->query("DELETE FROM " . DB_PREFIX . "filter WHERE filter_group_id = '" . (int)$filter_group_id . "'");
@@ -121,7 +121,11 @@ class ModelCatalogFilter extends Model {
 		$query = $this->db->query("SELECT * FROM " . DB_PREFIX . "filter_group_description WHERE filter_group_id = '" . (int)$filter_group_id . "'");
 
 		foreach ($query->rows as $result) {
-			$filter_group_data[$result['language_id']] = array('name' => $result['name']);
+			$dop = '';
+			if ($result['dop_filter'] != '') {
+				$dop = $result['dop_filter'];
+			}
+			$filter_group_data[$result['language_id']] = array('name' => $result['name'], 'dop_filtr' => $dop);
 		}
 
 		return $filter_group_data;
@@ -133,6 +137,7 @@ class ModelCatalogFilter extends Model {
 		return $query->row;
 	}
 
+	//todo модель получения автокомплита фильтров для категарий в админке
 	public function getFilters($data) {
 		$sql = "SELECT *, (SELECT name FROM " . DB_PREFIX . "filter_group_description fgd WHERE f.filter_group_id = fgd.filter_group_id AND fgd.language_id = '" . (int)$this->config->get('config_language_id') . "') AS `group` FROM " . DB_PREFIX . "filter f LEFT JOIN " . DB_PREFIX . "filter_description fd ON (f.filter_id = fd.filter_id) WHERE fd.language_id = '" . (int)$this->config->get('config_language_id') . "'";
 
@@ -155,9 +160,38 @@ class ModelCatalogFilter extends Model {
 		}
 
 		$query = $this->db->query($sql);
-
 		return $query->rows;
 	}
+
+	//todo метод модели выборки дополнительных фильтров
+	public function getDopFilters ($data){
+
+		$sql = "SELECT language_id, name,  FROM " . DB_PREFIX . "filter_group_description fgd  WHERE fgd.dop_filter <> '' AND fgd.language_id = '" . (int)$this->config->get('config_language_id') . "'";
+
+
+		if (!empty($data['dop_filter_name'])) {
+			$sql .= " AND fgd.name LIKE '" . $this->db->escape($data['dop_filter_name']) . "%'";
+		}
+
+
+		if (isset($data['start']) || isset($data['limit'])) {
+			if ($data['start'] < 0) {
+				$data['start'] = 0;
+			}
+
+			if ($data['limit'] < 1) {
+				$data['limit'] = 20;
+			}
+
+			$sql .= " LIMIT " . (int)$data['start'] . "," . (int)$data['limit'];
+		}
+
+
+		$query = $this->db->query($sql);
+		return $query->rows;
+	}
+
+
 
 	public function getFilterDescriptions($filter_group_id) {
 		$filter_data = array();

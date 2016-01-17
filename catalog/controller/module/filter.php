@@ -42,35 +42,55 @@ class ControllerModuleFilter extends Controller {
 				$data['filter_category'] = array();
 			}
 
+
+			if (isset($this->request->get['PriceFrom']) and isset($this->request->get['PriceTo'])) {
+				$data['PriceFrom'] = $this->request->get['PriceFrom'];
+				$data['PriceTo'] = $this->request->get['PriceTo'];
+			}
+
+
 			$this->load->model('catalog/product');
 
 			$data['filter_groups'] = array();
 
+			//получаем фильтри которые привязаны к категории
 			$filter_groups = $this->model_catalog_category->getCategoryFilters($category_id);
 
 			if ($filter_groups) {
 				foreach ($filter_groups as $filter_group) {
 					$childen_data = array();
 
-					foreach ($filter_group['filter'] as $filter) {
-						$filter_data = array(
-							'filter_category_id' => $category_id,
-							'filter_filter'      => $filter['filter_id']
-						);
+					if (!empty($filter_group['filter'])) {
 
-						$childen_data[] = array(
-							'filter_id' => $filter['filter_id'],
-							'name'      => $filter['name'] . ($this->config->get('config_product_count') ? ' (' . $this->model_catalog_product->getTotalProducts($filter_data) . ')' : '')
+						foreach ($filter_group['filter'] as $filter) {
+							$filter_data = array(
+									'filter_category_id' => $category_id,
+									'filter_filter' => $filter['filter_id']
+							);
+
+							$childen_data[] = array(
+									'filter_id' => $filter['filter_id'],
+									'name' => $filter['name'] . ($this->config->get('config_product_count') ? ' (' . $this->model_catalog_product->getTotalProducts($filter_data) . ')' : '')
+							);
+						}
+
+
+						$data['filter_groups'][] = array(
+								'filter_group_id' => $filter_group['filter_group_id'],
+								'name' => $filter_group['name'],
+								'filter' => $childen_data
+						);
+					//добавлен фильтр
+					} elseif (!empty($filter_group['dop_filter'])) {
+						$data['filter_groups'][] = array(
+								'filter_group_id' => $filter_group['filter_group_id'],
+								'name' => $filter_group['name'],
+								'dop_filter' => $filter_group['dop_filter']
 						);
 					}
-
-					$data['filter_groups'][] = array(
-						'filter_group_id' => $filter_group['filter_group_id'],
-						'name'            => $filter_group['name'],
-						'filter'          => $childen_data
-					);
 				}
 
+				//$data['test'] = $this->load->view($this->config->get('config_template') . '/template/module/filter_price.tpl');
 				if (file_exists(DIR_TEMPLATE . $this->config->get('config_template') . '/template/module/filter.tpl')) {
 					return $this->load->view($this->config->get('config_template') . '/template/module/filter.tpl', $data);
 				} else {
